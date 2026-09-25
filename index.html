@@ -1,4 +1,18 @@
-<!DOCTYPE html>
+async function updateDashboard() {
+    const ticker = document.getElementById('tickerInput').value.toUpperCase();
+    const apiKey = 'mREqA38gXCZkc1qZfNkC51sgQDAJ20S1';
+    
+    // Fetch real-time price & volume data from the API
+    const response = await fetch(`https://www.alphavantage.co/query?function=GLOBAL_QUOTE&symbol=${ticker}&apikey=${apiKey}`);
+    const data = await response.json();
+    
+    // Update live price on your screen
+    const quote = data['Global Quote'];
+    if (quote) {
+        document.getElementById('livePrice').innerText = '$' + parseFloat(quote['05. price']).toFixed(2);
+        document.getElementById('priceChange').innerText = quote['09. change'] + ' (' + quote['10. change percent'] + ')';
+    }
+}<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
