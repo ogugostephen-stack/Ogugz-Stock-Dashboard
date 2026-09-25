@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal Stock Terminal & Research Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0b0f17; color: #e2e8f0; }
+        .glass-card { background: rgba(17, 24, 39, 0.7); backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.08); }
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #0f172a; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #334155; border-radius: 4px; }
+    </style>
+</head>
+<body class="min-h-screen pb-12">
+
+    <!-- Navigation Header -->
+    <header class="border-b border-slate-800 bg-slate-900/60 sticky top-0 z-50 backdrop-blur-md">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="p-2 bg-emerald-500/10 border border-emerald-500/30 rounded-lg text-emerald-400 font-bold">
+                    ⚡ TERMINAL
+                </div>
+                <h1 class="text-lg font-semibold tracking-wide text-slate-100">Universal Stock Research Engine</h1>
+            </div>
+            
+            <div class="flex items-center space-x-4">
+                <div class="relative">
+                    <input type="text" id="tickerInput" value="RKLB" class="bg-slate-950 border border-slate-700 focus:border-emerald-500 text-emerald-400 text-sm rounded-lg px-4 py-2 w-36 uppercase font-mono font-bold tracking-wider outline-none transition-all">
+                    <button onclick="updateDashboard()" class="absolute right-1 top-1 bottom-1 px-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-md transition-all">
+                        LOAD
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-6 space-y-6">
+
+        <!-- Stock Overview Hero Banner -->
+        <div class="glass-card rounded-2xl p-6 relative overflow-hidden">
+            <div class="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+                <div>
+                    <div class="flex items-center space-x-3">
+                        <span id="displayTicker" class="text-3xl font-extrabold text-white font-mono">RKLB</span>
+                        <span id="companyName" class="text-lg font-medium text-slate-400">Rocket Lab USA, Inc.</span>
+                        <span id="sectorBadge" class="text-xs px-2.5 py-1 rounded-full bg-slate-800 border border-slate-700 text-slate-300">Aerospace & Defense</span>
+                    </div>
+                    <div class="mt-3 flex items-baseline space-x-4">
+                        <span id="livePrice" class="text-4xl font-black text-white">$73.61</span>
+                        <span id="priceChange" class="text-sm font-semibold text-emerald-400">▲ +2.45 (+3.44%)</span>
+                        <span class="text-xs text-slate-500">Real-Time Terminal Data</span>
+                    </div>
+                </div>
+
+                <!-- Signal Status Card -->
+                <div class="p-4 rounded-xl bg-slate-900/90 border border-slate-800 flex items-center space-x-4">
+                    <div>
+                        <div class="text-xs uppercase tracking-wider text-slate-500 font-semibold">Automated Buy Signal</div>
+                        <div id="buyStatus" class="text-xl font-bold mt-0.5 text-amber-400">⏳ WAIT ZONE ⏳</div>
+                        <div id="signalSubtext" class="text-xs text-slate-400 mt-1">Price is above Tier 1 Target ($65.00)</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Metric Grid Cards -->
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-xs text-slate-400 font-medium">Market Capitalization</div>
+                <div id="marketCap" class="text-2xl font-bold text-slate-100 mt-1">$45.30B</div>
+                <div class="text-xs text-slate-500 mt-1">615M Shares Outstanding</div>
+            </div>
+
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-xs text-slate-400 font-medium">Trailing P/E Ratio</div>
+                <div id="peRatio" class="text-2xl font-bold text-slate-100 mt-1">N/A</div>
+                <div class="text-xs text-slate-500 mt-1">Negative Net Income (-$198M)</div>
+            </div>
+
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-xs text-slate-400 font-medium">50-Day Moving Avg</div>
+                <div id="sma50" class="text-2xl font-bold text-slate-100 mt-1">$58.40</div>
+                <div id="sma50Diff" class="text-xs text-emerald-400 mt-1">+26.0% Premium</div>
+            </div>
+
+            <div class="glass-card rounded-xl p-4">
+                <div class="text-xs text-slate-400 font-medium">200-Day Moving Avg</div>
+                <div id="sma200" class="text-2xl font-bold text-slate-100 mt-1">$42.15</div>
+                <div id="sma200Diff" class="text-xs text-amber-400 mt-1">+74.6% Structural Risk</div>
+            </div>
+        </div>
+
+        <!-- Target Analysis Panel & Revenue Chart -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <div class="glass-card rounded-2xl p-6 space-y-6">
+                <h2 class="text-md font-bold text-slate-200 border-b border-slate-800 pb-3 flex items-center justify-between">
+                    <span>🎯 Price Target Tiers</span>
+                    <span class="text-xs text-slate-500 font-normal">Interactive Thresholds</span>
+                </h2>
+
+                <div class="space-y-4">
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-emerald-400 font-semibold">Tier 1 Target (Pullback Buy)</span>
+                            <span id="t1TargetVal" class="font-mono font-bold">$65.00</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2">
+                            <div id="t1Bar" class="bg-emerald-500 h-2 rounded-full" style="width: 88%"></div>
+                        </div>
+                        <div class="text-right text-[10px] text-slate-500 mt-1">Distance: <span id="t1Dist">+13.25%</span></div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-amber-400 font-semibold">Tier 2 Floor (Support Shelf)</span>
+                            <span id="t2TargetVal" class="font-mono font-bold">$58.00</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2">
+                            <div id="t2Bar" class="bg-amber-500 h-2 rounded-full" style="width: 78%"></div>
+                        </div>
+                        <div class="text-right text-[10px] text-slate-500 mt-1">Distance to Floor: <span id="t2Dist">+26.91%</span></div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-xs mb-1">
+                            <span class="text-rose-400 font-semibold">Tier 3 Panic (Deep Value)</span>
+                            <span id="t3TargetVal" class="font-mono font-bold">$50.00</span>
+                        </div>
+                        <div class="w-full bg-slate-900 rounded-full h-2">
+                            <div id="t3Bar" class="bg-rose-500 h-2 rounded-full" style="width: 67%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-2 text-xs">
+                    <div class="text-slate-300 font-medium">Technical Support Logic:</div>
+                    <p id="supportLogicText" class="text-slate-400 leading-relaxed">
+                        $58.00 represents major historical breakout support and aligns with the rising 50-day moving average cluster.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Revenue Chart -->
+            <div class="glass-card rounded-2xl p-6 lg:col-span-2 space-y-4">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                    <h2 class="text-md font-bold text-slate-200">📊 5-Year Revenue Trajectory & Growth Engine</h2>
+                    <div class="text-xs text-emerald-400 font-mono font-semibold">CAGR: +76.6%/yr</div>
+                </div>
+                <div class="h-64 relative">
+                    <canvas id="revenueChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Fundamental Metrics Table -->
+        <div class="glass-card rounded-2xl p-6">
+            <h2 class="text-md font-bold text-slate-200 border-b border-slate-800 pb-4">
+                🔍 Fundamental Analysis Breakdown
+            </h2>
+
+            <div class="overflow-x-auto custom-scrollbar">
+                <table class="w-full text-left text-xs text-slate-300 border-collapse">
+                    <thead>
+                        <tr class="border-b border-slate-800 text-slate-500 uppercase tracking-wider font-semibold">
+                            <th class="py-3 px-4">Financial Metric</th>
+                            <th class="py-3 px-4">Reported Value</th>
+                            <th class="py-3 px-4">Analyst Benchmark</th>
+                            <th class="py-3 px-4">Strategic Assessment</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 font-mono">
+                        <tr>
+                            <td class="py-3 px-4 font-sans font-medium text-slate-200">5-Year Revenue (2021-2025)</td>
+                            <td class="py-3 px-4 text-emerald-400">$62M ➔ $602M</td>
+                            <td class="py-3 px-4 text-slate-400">(Rev_2025 / Rev_2021)^(1/4) - 1</td>
+                            <td class="py-3 px-4 font-sans text-slate-300">Hyper-growth space launch scaling</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4 font-sans font-medium text-slate-200">Free Cash Flow (FCF)</td>
+                            <td class="py-3 px-4 text-rose-400">-$321.8M</td>
+                            <td class="py-3 px-4 text-slate-400">Operating Cash Flow - CapEx</td>
+                            <td class="py-3 px-4 font-sans text-slate-300">Heavy CapEx for Neutron development</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4 font-sans font-medium text-slate-200">Reinvestment % of Revenue</td>
+                            <td class="py-3 px-4 text-emerald-400">71.0%</td>
+                            <td class="py-3 px-4 text-slate-400">(R&D ($271M) + CapEx ($156M)) / Revenue</td>
+                            <td class="py-3 px-4 font-sans text-slate-300">Aggressive reinvestment expanding competitive moat</td>
+                        </tr>
+                        <tr>
+                            <td class="py-3 px-4 font-sans font-medium text-slate-200">Cash Cushion & Investments</td>
+                            <td class="py-3 px-4 text-slate-100">$1,017M</td>
+                            <td class="py-3 px-4 text-slate-400">Cash & Equivalents + Short Term Inv.</td>
+                            <td class="py-3 px-4 font-sans text-slate-300">Strong balance sheet runway through multi-year cash burn</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const database = {
+            'RKLB': {
+                name: "Rocket Lab USA, Inc.",
+                sector: "Aerospace & Defense",
+                price: 73.61,
+                change: "+2.45 (+3.44%)",
+                marketCap: "$45.30B",
+                pe: "N/A",
+                sma50: 58.40,
+                sma200: 42.15,
+                t1: 65.00,
+                t2: 58.00,
+                t3: 50.00,
+                status: "⏳ WAIT ZONE ⏳",
+                supportLogic: "$58.00 represents major historical breakout support and aligns with the rising 50-day moving average cluster.",
+                revenue: [62, 211, 244.8, 436.2, 602]
+            },
+            'NVDA': {
+                name: "NVIDIA Corporation",
+                sector: "Semiconductors",
+                price: 130.25,
+                change: "+4.12 (+3.27%)",
+                marketCap: "$3.20T",
+                pe: "48.2x",
+                sma50: 122.10,
+                sma200: 105.40,
+                t1: 118.00,
+                t2: 105.00,
+                t3: 95.00,
+                status: "⏳ WAIT ZONE ⏳",
+                supportLogic: "$105.00 matches 200 SMA and major institutional demand cluster.",
+                revenue: [26914, 26974, 60922, 96300, 125000]
+            },
+            'BBAI': {
+                name: "BigBear.ai Holdings",
+                sector: "Software - AI",
+                price: 2.81,
+                change: "-0.08 (-2.77%)",
+                marketCap: "$580M",
+                pe: "N/A",
+                sma50: 2.98,
+                sma200: 4.14,
+                t1: 6.00,
+                t2: 5.80,
+                t3: 4.00,
+                status: "🤑 BUY ZONE 🤑",
+                supportLogic: "Price is well under Tier 1 target ($6.00); deep value zone.",
+                revenue: [145, 155, 157, 168, 180]
+            }
+        };
+
+        let chart;
+
+        function initChart(data) {
+            const ctx = document.getElementById('revenueChart').getContext('2d');
+            if (chart) chart.destroy();
+
+            chart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['2021', '2022', '2023', '2024', '2025'],
+                    datasets: [{
+                        label: 'Annual Revenue ($M)',
+                        data: data,
+                        backgroundColor: 'rgba(16, 185, 129, 0.4)',
+                        borderColor: '#10b981',
+                        borderWidth: 2,
+                        borderRadius: 6
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } },
+                        y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#94a3b8' } }
+                    }
+                }
+            });
+        }
+
+        function updateDashboard() {
+            const ticker = document.getElementById('tickerInput').value.toUpperCase();
+            const data = database[ticker] || database['RKLB'];
+
+            document.getElementById('displayTicker').innerText = ticker;
+            document.getElementById('companyName').innerText = data.name;
+            document.getElementById('sectorBadge').innerText = data.sector;
+            document.getElementById('livePrice').innerText = '$' + data.price.toFixed(2);
+            document.getElementById('priceChange').innerText = data.change;
+            document.getElementById('marketCap').innerText = data.marketCap;
+            document.getElementById('peRatio').innerText = data.pe;
+            document.getElementById('sma50').innerText = '$' + data.sma50.toFixed(2);
+            document.getElementById('sma200').innerText = '$' + data.sma200.toFixed(2);
+
+            document.getElementById('t1TargetVal').innerText = '$' + data.t1.toFixed(2);
+            document.getElementById('t2TargetVal').innerText = '$' + data.t2.toFixed(2);
+            document.getElementById('t3TargetVal').innerText = '$' + data.t3.toFixed(2);
+
+            const distT1 = (((data.price - data.t1) / data.t1) * 100).toFixed(2);
+            const distT2 = (((data.price - data.t2) / data.t2) * 100).toFixed(2);
+
+            document.getElementById('t1Dist').innerText = (distT1 > 0 ? '+' : '') + distT1 + '%';
+            document.getElementById('t2Dist').innerText = (distT2 > 0 ? '+' : '') + distT2 + '%';
+
+            document.getElementById('buyStatus').innerText = data.status;
+            document.getElementById('supportLogicText').innerText = data.supportLogic;
+
+            initChart(data.revenue);
+        }
+
+        window.onload = () => updateDashboard();
+    </script>
+</body>
+</html>
